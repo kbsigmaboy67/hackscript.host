@@ -1,615 +1,99 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>HackTerminal v3.0 — HackScript Engine</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet"/>
-<!-- CodeMirror -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css"/>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/javascript-hint.min.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.css"/>
-<style>
-  :root {
-    --red:       #ff2244;
-    --red-dim:   #991122;
-    --red-glow:  rgba(255,34,68,0.35);
-    --blue:      #00aaff;
-    --blue-dim:  #005599;
-    --blue-glow: rgba(0,170,255,0.35);
-    --cyan:      #00ffee;
-    --cyan-dim:  rgba(0,255,238,0.15);
-    --bg0:       #000000;
-    --bg1:       #050508;
-    --bg2:       #0a0a12;
-    --bg3:       #0f0f1a;
-    --bg4:       #141422;
-    --border:    #1a1a2e;
-    --text:      #c8d0e0;
-    --text-dim:  #556070;
-    --green:     #00ff88;
-    --yellow:    #ffcc00;
-    --purple:    #aa44ff;
-    --white:     #e8eaf0;
-    --font-mono: 'Share Tech Mono', monospace;
-    --font-hud:  'Orbitron', sans-serif;
-    --font-ui:   'Rajdhani', sans-serif;
-  }
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HackTerminal v3.0 — HackScript Engine</title>
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet"/>
 
-  html, body {
-    height: 100%;
-    background: var(--bg0);
-    color: var(--text);
-    font-family: var(--font-mono);
-    overflow: hidden;
-    cursor: default;
-  }
+  <!-- CodeMirror -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/javascript-hint.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.css"/>
 
-  /* Scanline overlay */
-  body::before {
-    content: '';
-    position: fixed; inset: 0;
-    background: repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(0,0,0,0.08) 2px,
-      rgba(0,0,0,0.08) 4px
-    );
-    pointer-events: none;
-    z-index: 9999;
-  }
-
-  /* Vignette */
-  body::after {
-    content: '';
-    position: fixed; inset: 0;
-    background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.7) 100%);
-    pointer-events: none;
-    z-index: 9998;
-  }
-
-  /* ─── Layout ─── */
-  #app {
-    display: grid;
-    grid-template-rows: 44px 1fr;
-    grid-template-columns: 260px 1fr 300px;
-    height: 100vh;
-    gap: 0;
-  }
-
-  /* ─── Titlebar ─── */
-  #titlebar {
-    grid-column: 1 / -1;
-    display: flex; align-items: center; gap: 16px;
-    padding: 0 20px;
-    background: linear-gradient(90deg, var(--bg0) 0%, var(--bg2) 40%, var(--bg0) 100%);
-    border-bottom: 1px solid var(--border);
-    position: relative;
-    overflow: hidden;
-  }
-  #titlebar::after {
-    content: '';
-    position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
-    background: linear-gradient(90deg, transparent, var(--red), var(--blue), transparent);
-    animation: titleline 3s linear infinite;
-  }
-  @keyframes titleline {
-    0%   { opacity: 0.4; }
-    50%  { opacity: 1; }
-    100% { opacity: 0.4; }
-  }
-
-  .tb-logo {
-    font-family: var(--font-hud);
-    font-size: 14px;
-    font-weight: 900;
-    letter-spacing: 4px;
-    text-transform: uppercase;
-    background: linear-gradient(90deg, var(--red), var(--blue));
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    text-shadow: none;
-  }
-  .tb-sep { color: var(--border); font-size: 18px; }
-  .tb-version {
-    font-family: var(--font-hud); font-size: 9px;
-    color: var(--text-dim); letter-spacing: 2px;
-  }
-  .tb-status {
-    margin-left: auto; display: flex; gap: 16px; align-items: center;
-  }
-  .status-dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: var(--green);
-    box-shadow: 0 0 8px var(--green);
-    animation: pulse-dot 2s infinite;
-  }
-  @keyframes pulse-dot { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
-  .tb-clock {
-    font-family: var(--font-hud); font-size: 10px;
-    color: var(--blue); letter-spacing: 2px;
-  }
-
-  /* ─── Sidebar ─── */
-  #sidebar {
-    background: var(--bg1);
-    border-right: 1px solid var(--border);
-    display: flex; flex-direction: column;
-    overflow: hidden;
-  }
-  .sidebar-section {
-    border-bottom: 1px solid var(--border);
-    padding: 8px 0;
-  }
-  .sidebar-title {
-    font-family: var(--font-hud); font-size: 9px;
-    color: var(--text-dim); letter-spacing: 3px;
-    text-transform: uppercase;
-    padding: 4px 12px 8px;
-  }
-  .sidebar-item {
-    display: flex; align-items: center; gap: 8px;
-    padding: 5px 12px;
-    font-size: 11px; color: var(--text-dim);
-    cursor: pointer;
-    transition: all 0.15s;
-    position: relative;
-  }
-  .sidebar-item:hover {
-    color: var(--white);
-    background: rgba(0,170,255,0.06);
-  }
-  .sidebar-item:hover::before {
-    content: '';
-    position: absolute; left: 0; top: 0; bottom: 0; width: 2px;
-    background: var(--blue);
-  }
-  .sidebar-item .si-tag {
-    margin-left: auto;
-    font-size: 9px; color: var(--text-dim);
-    background: var(--bg3); padding: 1px 5px;
-    border-radius: 2px;
-  }
-  .si-proxy .si-tag { color: var(--red); border: 1px solid var(--red-dim); }
-  .si-game  .si-tag { color: var(--blue); border: 1px solid var(--blue-dim); }
-  #sidebar-list { overflow-y: auto; flex: 1; }
-  #sidebar-list::-webkit-scrollbar { width: 3px; }
-  #sidebar-list::-webkit-scrollbar-thumb { background: var(--border); }
-
-  .filter-bar {
-    display: flex; gap: 4px; padding: 8px 12px;
-    border-bottom: 1px solid var(--border);
-  }
-  .filter-btn {
-    font-family: var(--font-hud); font-size: 9px;
-    padding: 3px 8px; border-radius: 2px;
-    border: 1px solid var(--border);
-    background: transparent; color: var(--text-dim);
-    cursor: pointer; letter-spacing: 1px;
-    transition: all 0.15s;
-  }
-  .filter-btn.active { border-color: var(--blue); color: var(--blue); background: rgba(0,170,255,0.1); }
-  .filter-btn:hover:not(.active) { border-color: var(--text-dim); color: var(--white); }
-
-  /* ─── Main Terminal ─── */
-  #main {
-    display: flex; flex-direction: column;
-    background: var(--bg0);
-    overflow: hidden;
-    position: relative;
-  }
-
-  /* Tab bar */
-  #tabs {
-    display: flex; align-items: center; gap: 0;
-    background: var(--bg1); border-bottom: 1px solid var(--border);
-    height: 34px; padding: 0 8px;
-  }
-  .tab {
-    display: flex; align-items: center; gap: 8px;
-    padding: 0 14px; height: 34px;
-    font-family: var(--font-ui); font-size: 12px; font-weight: 500;
-    color: var(--text-dim); cursor: pointer;
-    border-right: 1px solid var(--border);
-    transition: all 0.15s;
-    letter-spacing: 1px;
-    position: relative;
-  }
-  .tab.active {
-    color: var(--white);
-    background: var(--bg0);
-  }
-  .tab.active::after {
-    content: '';
-    position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
-    background: linear-gradient(90deg, var(--red), var(--blue));
-  }
-  .tab:hover:not(.active) { color: var(--text); background: var(--bg2); }
-  .tab-add {
-    padding: 0 12px; color: var(--text-dim);
-    cursor: pointer; font-size: 16px;
-  }
-  .tab-add:hover { color: var(--blue); }
-
-  /* Panel containers */
-  #panels {
-    flex: 1; overflow: hidden;
-    display: grid; grid-template-rows: 1fr 34px 280px;
-  }
-
-  /* Terminal output */
-  #terminal {
-    overflow-y: auto; overflow-x: hidden;
-    padding: 12px 16px;
-    background: var(--bg0);
-    position: relative;
-  }
-  #terminal::-webkit-scrollbar { width: 4px; }
-  #terminal::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-  #terminal::-webkit-scrollbar-thumb:hover { background: var(--blue-dim); }
-
-  .t-line {
-    display: flex; align-items: flex-start; gap: 8px;
-    line-height: 1.6; font-size: 13px;
-    margin-bottom: 1px;
-    animation: line-in 0.12s ease-out;
-  }
-  @keyframes line-in {
-    from { opacity: 0; transform: translateX(-4px); }
-    to   { opacity: 1; transform: translateX(0); }
-  }
-  .t-prompt { color: var(--red); flex-shrink: 0; user-select: none; }
-  .t-out    { color: var(--text); white-space: pre-wrap; word-break: break-all; }
-  .t-err    { color: var(--red); }
-  .t-ok     { color: var(--green); }
-  .t-info   { color: var(--blue); }
-  .t-warn   { color: var(--yellow); }
-  .t-sys    { color: var(--purple); }
-  .t-cmd    { color: var(--cyan); }
-  .t-html   { color: var(--text); }
-  .t-dim    { color: var(--text-dim); }
-
-  /* ASCII art / banner */
-  .t-banner {
-    font-size: 11px; line-height: 1.3;
-    color: var(--red);
-    text-shadow: 0 0 10px var(--red-glow);
-    margin-bottom: 4px;
-  }
-  .t-banner span { color: var(--blue); }
-
-  /* Input bar */
-  #inputbar {
-    display: flex; align-items: center; gap: 8px;
-    padding: 0 16px;
-    background: var(--bg1); border-top: 1px solid var(--border);
-    height: 34px;
-  }
-  #input-prompt {
-    color: var(--red); font-size: 13px; user-select: none; flex-shrink: 0;
-  }
-  #cmd-input {
-    flex: 1; background: transparent; border: none; outline: none;
-    color: var(--cyan); font-family: var(--font-mono); font-size: 13px;
-    caret-color: var(--cyan);
-  }
-  #cmd-input::placeholder { color: var(--text-dim); }
-
-  /* Editor panel */
-  #editor-panel {
-    background: var(--bg1);
-    border-top: 1px solid var(--border);
-    display: flex; flex-direction: column;
-    overflow: hidden;
-  }
-  #editor-header {
-    display: flex; align-items: center; gap: 8px;
-    padding: 0 12px; height: 28px;
-    background: var(--bg2); border-bottom: 1px solid var(--border);
-  }
-  .ed-title {
-    font-family: var(--font-hud); font-size: 9px;
-    color: var(--text-dim); letter-spacing: 3px;
-    text-transform: uppercase;
-  }
-  .ed-file {
-    font-family: var(--font-mono); font-size: 11px;
-    color: var(--blue);
-    margin-left: 8px;
-  }
-  .ed-btn {
-    margin-left: auto; display: flex; gap: 6px;
-  }
-  .btn {
-    font-family: var(--font-hud); font-size: 9px;
-    padding: 3px 10px; border-radius: 2px;
-    border: 1px solid; cursor: pointer;
-    letter-spacing: 1px; text-transform: uppercase;
-    transition: all 0.15s;
-    background: transparent;
-  }
-  .btn-run   { border-color: var(--green); color: var(--green); }
-  .btn-run:hover { background: rgba(0,255,136,0.1); box-shadow: 0 0 8px rgba(0,255,136,0.2); }
-  .btn-clear { border-color: var(--red); color: var(--red); }
-  .btn-clear:hover { background: rgba(255,34,68,0.1); }
-  .btn-save  { border-color: var(--blue); color: var(--blue); }
-  .btn-save:hover { background: rgba(0,170,255,0.1); }
-
-  #editor-wrap { flex: 1; overflow: hidden; }
-
-  /* CodeMirror overrides — match our theme */
-  .CodeMirror {
-    height: 100% !important;
-    background: #02020a !important;
-    color: #c8d0e0 !important;
-    font-family: var(--font-mono) !important;
-    font-size: 12.5px !important;
-    line-height: 1.6 !important;
-    border: none !important;
-  }
-  .CodeMirror-scroll { padding-bottom: 4px !important; }
-  .CodeMirror-gutters { background: #06060f !important; border-right: 1px solid #1a1a2e !important; }
-  .CodeMirror-linenumber { color: #334466 !important; }
-  .CodeMirror-cursor { border-left: 2px solid var(--cyan) !important; }
-  .CodeMirror-selected { background: rgba(0,170,255,0.12) !important; }
-  .CodeMirror-activeline-background { background: rgba(0,170,255,0.04) !important; }
-
-  /* Syntax token overrides */
-  .cm-keyword  { color: #ff2244 !important; font-weight: bold !important; }
-  .cm-def      { color: #00aaff !important; }
-  .cm-variable { color: #c8d0e0 !important; }
-  .cm-variable-2 { color: #00ffee !important; }
-  .cm-property { color: #aa44ff !important; }
-  .cm-string   { color: #00ff88 !important; }
-  .cm-number   { color: #ffcc00 !important; }
-  .cm-comment  { color: #445566 !important; font-style: italic !important; }
-  .cm-operator { color: #ff8844 !important; }
-  .cm-atom     { color: #ff6699 !important; }
-  .cm-builtin  { color: #ff2244 !important; }
-  .cm-tag      { color: #00aaff !important; }
-  .cm-attribute{ color: #ffcc00 !important; }
-  .cm-bracket  { color: #aabbcc !important; }
-  .CodeMirror-matchingbracket { color: var(--cyan) !important; border-bottom: 1px solid var(--cyan) !important; }
-  .CodeMirror-hint { background: var(--bg3) !important; color: var(--text) !important; border: 1px solid var(--border) !important; }
-  .CodeMirror-hint-active { background: rgba(0,170,255,0.15) !important; color: var(--blue) !important; }
-
-  /* ─── Right panel ─── */
-  #rightpanel {
-    background: var(--bg1);
-    border-left: 1px solid var(--border);
-    display: flex; flex-direction: column;
-    overflow: hidden;
-  }
-  .rp-section {
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-  }
-  .rp-title {
-    font-family: var(--font-hud); font-size: 9px;
-    color: var(--text-dim); letter-spacing: 3px;
-    padding: 8px 12px 4px;
-    text-transform: uppercase;
-  }
-
-  /* Quick stats */
-  .stat-grid {
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 6px; padding: 6px 12px 10px;
-  }
-  .stat-card {
-    background: var(--bg2); border: 1px solid var(--border);
-    border-radius: 3px; padding: 6px 8px;
-  }
-  .stat-val {
-    font-family: var(--font-hud); font-size: 14px;
-    font-weight: 700;
-  }
-  .stat-lbl { font-size: 9px; color: var(--text-dim); margin-top: 1px; letter-spacing: 1px; }
-  .sv-red  { color: var(--red); text-shadow: 0 0 8px var(--red-glow); }
-  .sv-blue { color: var(--blue); text-shadow: 0 0 8px var(--blue-glow); }
-  .sv-grn  { color: var(--green); }
-  .sv-ylw  { color: var(--yellow); }
-
-  /* History */
-  #history-list {
-    overflow-y: auto; flex: 0 0 140px;
-    padding: 4px 0;
-  }
-  #history-list::-webkit-scrollbar { width: 2px; }
-  #history-list::-webkit-scrollbar-thumb { background: var(--border); }
-  .hist-item {
-    padding: 3px 12px; font-size: 11px;
-    color: var(--text-dim); cursor: pointer;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    transition: all 0.1s;
-  }
-  .hist-item:hover { color: var(--cyan); background: var(--bg2); }
-
-  /* Vars display */
-  #vars-panel {
-    flex: 1; overflow-y: auto; padding: 6px 12px;
-  }
-  #vars-panel::-webkit-scrollbar { width: 2px; }
-  #vars-panel::-webkit-scrollbar-thumb { background: var(--border); }
-  .var-row {
-    display: flex; gap: 6px; align-items: baseline;
-    font-size: 11px; margin-bottom: 3px;
-  }
-  .var-name { color: var(--blue); font-size: 11px; min-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .var-val  { color: var(--green); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; }
-  .var-type { color: var(--text-dim); font-size: 9px; margin-left: auto; }
-
-  /* Notifications */
-  #notif {
-    position: fixed; top: 50px; right: 12px; z-index: 9990;
-    display: flex; flex-direction: column; gap: 6px;
-    pointer-events: none;
-  }
-  .notif-item {
-    background: var(--bg3); border-radius: 4px;
-    padding: 8px 14px; font-size: 12px;
-    border-left: 3px solid var(--blue);
-    animation: notif-in 0.2s ease-out, notif-out 0.3s ease-in 2.7s forwards;
-    font-family: var(--font-ui); letter-spacing: 0.5px;
-  }
-  .notif-item.err { border-color: var(--red); color: var(--red); }
-  .notif-item.ok  { border-color: var(--green); color: var(--green); }
-  @keyframes notif-in { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: none; } }
-  @keyframes notif-out { to { opacity: 0; transform: translateX(20px); } }
-
-  /* iframe overlay */
-  #iframe-overlay {
-    display: none; position: fixed; inset: 44px 0 0 0; z-index: 9000;
-    flex-direction: column;
-    background: var(--bg0);
-  }
-  #iframe-overlay.visible { display: flex; }
-  #iframe-bar {
-    display: flex; align-items: center; gap: 10px;
-    background: var(--bg2); border-bottom: 1px solid var(--border);
-    padding: 0 12px; height: 34px; flex-shrink: 0;
-  }
-  #iframe-title {
-    font-family: var(--font-ui); font-size: 13px;
-    color: var(--blue); letter-spacing: 1px; flex: 1;
-  }
-  #iframe-frame { flex: 1; border: none; }
-  .iframe-close {
-    font-family: var(--font-hud); font-size: 9px; letter-spacing: 2px;
-    border: 1px solid var(--red); color: var(--red);
-    background: transparent; padding: 3px 10px; cursor: pointer;
-    transition: all 0.15s; border-radius: 2px;
-  }
-  .iframe-close:hover { background: rgba(255,34,68,0.15); }
-
-  /* Autocomplete dropdown */
-  #autocomplete {
-    display: none; position: fixed;
-    background: var(--bg3); border: 1px solid var(--blue-dim);
-    border-radius: 3px; z-index: 9500;
-    max-height: 160px; overflow-y: auto;
-    min-width: 200px;
-  }
-  #autocomplete::-webkit-scrollbar { width: 2px; }
-  .ac-item {
-    padding: 5px 12px; font-size: 12px;
-    cursor: pointer; font-family: var(--font-mono);
-    display: flex; gap: 10px; align-items: center;
-  }
-  .ac-item:hover, .ac-item.selected { background: rgba(0,170,255,0.12); color: var(--blue); }
-  .ac-type { font-size: 9px; color: var(--text-dim); margin-left: auto; font-family: var(--font-hud); letter-spacing: 1px; }
-  .ac-type.cmd  { color: var(--red); }
-  .ac-type.fn   { color: var(--purple); }
-  .ac-type.kw   { color: var(--yellow); }
-
-  /* Custom scrollbar global */
-  * { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
-
-  /* Glow on input focus */
-  #cmd-input:focus { text-shadow: 0 0 8px var(--cyan); }
-
-  /* Progress bar animation */
-  .progress-bar {
-    height: 3px; background: var(--bg3);
-    border-radius: 2px; overflow: hidden; width: 100%; margin: 4px 0;
-  }
-  .progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--red), var(--blue));
-    border-radius: 2px;
-    animation: progress-grow 1.5s ease-out forwards;
-  }
-  @keyframes progress-grow { from { width: 0; } }
-
-  /* Matrix rain canvas */
-  #matrix-canvas {
-    display: none;
-    position: fixed; inset: 0; z-index: 8000;
-    background: black;
-    cursor: pointer;
-  }
-
-  /* Theme flash */
-  @keyframes flash {
-    0%   { filter: brightness(2); }
-    100% { filter: brightness(1); }
-  }
-  .flash { animation: flash 0.3s ease-out; }
-
-  /* Mobile adjustments */
-  @media (max-width: 900px) {
-    #app { grid-template-columns: 0 1fr 0; }
-    #sidebar, #rightpanel { display: none; }
-  }
-</style>
+  <!-- App stylesheet -->
+  <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
 
+<!-- ═══════════════════════════════════════════════════════
+     APP SHELL
+═══════════════════════════════════════════════════════ -->
 <div id="app">
+
   <!-- Titlebar -->
-  <div id="titlebar">
+  <header id="titlebar">
     <div class="tb-logo">HackTerminal</div>
     <div class="tb-sep">|</div>
     <div class="tb-version">HACKSCRIPT v3.0 ENGINE</div>
-    <div class="tb-status">
+    <nav class="tb-status">
       <div class="status-dot" id="status-dot"></div>
       <div class="tb-clock" id="clock">00:00:00</div>
-    </div>
-  </div>
+    </nav>
+  </header>
 
-  <!-- Sidebar -->
-  <div id="sidebar">
+  <!-- Sidebar: links hidden behind hash routing -->
+  <aside id="sidebar">
     <div class="sidebar-section">
       <div class="sidebar-title">Navigator</div>
       <div class="filter-bar">
-        <button class="filter-btn active" onclick="filterSidebar('all')">ALL</button>
-        <button class="filter-btn" onclick="filterSidebar('proxy')">PROXY</button>
-        <button class="filter-btn" onclick="filterSidebar('game')">GAMES</button>
+        <button class="filter-btn active" data-cat="all">ALL</button>
+        <button class="filter-btn" data-cat="proxy">PROXY</button>
+        <button class="filter-btn" data-cat="game">GAMES</button>
       </div>
     </div>
     <div id="sidebar-list"></div>
-  </div>
+  </aside>
 
-  <!-- Main -->
-  <div id="main">
+  <!-- Main terminal area -->
+  <main id="main">
+    <!-- Tab bar -->
     <div id="tabs">
       <div class="tab active" data-tab="terminal">⚡ TERMINAL</div>
-      <div class="tab" data-tab="editor" onclick="switchTab('editor')">⌨ EDITOR</div>
-      <div class="tab" data-tab="net" onclick="switchTab('net')">🌐 NET</div>
+      <div class="tab" data-tab="editor">⌨ EDITOR</div>
+      <div class="tab" data-tab="vault">🔐 VAULT</div>
     </div>
+
+    <!-- Panels container -->
     <div id="panels">
+      <!-- Terminal output -->
       <div id="terminal"></div>
+
+      <!-- Input bar -->
       <div id="inputbar">
-        <div id="input-prompt">hackscript&gt;</div>
-        <input id="cmd-input" type="text" autocomplete="off" spellcheck="false" placeholder="type a command or hackscript... (TAB to autocomplete)"/>
+        <span id="input-prompt">hackscript&gt;</span>
+        <input id="cmd-input" type="text" autocomplete="off" spellcheck="false"
+               placeholder="type hackscript or JS — TAB to autocomplete, ↑↓ history"/>
       </div>
+
+      <!-- Code Editor -->
       <div id="editor-panel">
         <div id="editor-header">
-          <div class="ed-title">Editor</div>
-          <div class="ed-file" id="editor-filename">scratch.hs</div>
+          <span class="ed-title">Editor</span>
+          <span class="ed-file" id="editor-filename" contenteditable="true">scratch.hs</span>
           <div class="ed-btn">
-            <button class="btn btn-run"   onclick="runEditor()">▶ RUN</button>
-            <button class="btn btn-save"  onclick="saveEditor()">⬇ SAVE</button>
-            <button class="btn btn-clear" onclick="clearEditor()">✕ CLEAR</button>
+            <button class="btn btn-run"   id="btn-run">▶ RUN</button>
+            <button class="btn btn-save"  id="btn-save">⬇ SAVE</button>
+            <button class="btn btn-clear" id="btn-clear">✕ CLEAR</button>
           </div>
         </div>
         <div id="editor-wrap"></div>
       </div>
     </div>
-  </div>
+  </main>
 
   <!-- Right panel -->
-  <div id="rightpanel">
-    <div class="rp-section">
+  <aside id="rightpanel">
+    <section class="rp-section">
       <div class="rp-title">System</div>
       <div class="stat-grid">
         <div class="stat-card"><div class="stat-val sv-red"  id="stat-cmds">0</div><div class="stat-lbl">COMMANDS</div></div>
@@ -617,781 +101,154 @@
         <div class="stat-card"><div class="stat-val sv-grn"  id="stat-fns">0</div><div class="stat-lbl">FUNCTIONS</div></div>
         <div class="stat-card"><div class="stat-val sv-ylw"  id="stat-lines">0</div><div class="stat-lbl">LINES RUN</div></div>
       </div>
-    </div>
-    <div class="rp-section">
+    </section>
+    <section class="rp-section">
       <div class="rp-title">History</div>
       <div id="history-list"></div>
-    </div>
-    <div class="rp-section" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+    </section>
+    <section class="rp-section rp-vars">
       <div class="rp-title">Variables</div>
       <div id="vars-panel"></div>
-    </div>
-  </div>
+    </section>
+  </aside>
 </div>
 
 <!-- Notifications -->
-<div id="notif"></div>
+<div id="notif" aria-live="polite"></div>
 
-<!-- Autocomplete -->
-<div id="autocomplete"></div>
+<!-- Autocomplete dropdown -->
+<div id="autocomplete" role="listbox"></div>
 
-<!-- iframe overlay -->
-<div id="iframe-overlay">
-  <div id="iframe-bar">
-    <div id="iframe-title">—</div>
-    <button class="iframe-close" onclick="closeIframe()">✕ CLOSE</button>
+<!-- Vault / Crypto panel (shown via tab) -->
+<div id="vault-panel" hidden>
+  <div id="vault-inner">
+    <div class="vault-title">🔐 VAULT — AES-256-GCM Encryption</div>
+
+    <div class="vault-tabs">
+      <button class="vtab active" data-vtab="text">TEXT</button>
+      <button class="vtab" data-vtab="file">FILE</button>
+      <button class="vtab" data-vtab="hash">HASH</button>
+      <button class="vtab" data-vtab="passgen">PASSGEN</button>
+      <button class="vtab" data-vtab="stego">STEGO</button>
+    </div>
+
+    <!-- Text encrypt/decrypt -->
+    <div class="vtab-body active" data-vtab="text">
+      <label class="vlabel">Passphrase</label>
+      <div class="vpass-wrap">
+        <input type="password" id="v-pass-text" class="vinput" placeholder="Enter passphrase…"/>
+        <button class="v-eye" data-target="v-pass-text">👁</button>
+      </div>
+      <div class="vstrength" id="vstr-text">strength: —</div>
+      <label class="vlabel">Plaintext</label>
+      <textarea id="v-plain" class="vtextarea" placeholder="Text to encrypt…" rows="4"></textarea>
+      <label class="vlabel">Cover text (steganography, optional)</label>
+      <textarea id="v-cover" class="vtextarea" placeholder="Visible cover text — payload hidden inside invisible chars…" rows="2"></textarea>
+      <div class="vbtnrow">
+        <button class="vbtn vbtn-enc" id="v-text-enc">⟳ Encrypt</button>
+        <button class="vbtn vbtn-dec" id="v-text-dec">⟳ Decrypt</button>
+        <button class="vbtn vbtn-clr" id="v-text-clr">✕ Clear</button>
+      </div>
+      <label class="vlabel">Output</label>
+      <textarea id="v-out-text" class="vtextarea" placeholder="Output appears here…" rows="4" readonly></textarea>
+      <div class="vbtnrow">
+        <button class="vbtn" id="v-text-copy">📋 Copy</button>
+        <button class="vbtn" id="v-text-export">⤓ Export .txt</button>
+      </div>
+    </div>
+
+    <!-- File encrypt/decrypt -->
+    <div class="vtab-body" data-vtab="file">
+      <label class="vlabel">Passphrase</label>
+      <div class="vpass-wrap">
+        <input type="password" id="v-pass-file" class="vinput" placeholder="Enter passphrase…"/>
+        <button class="v-eye" data-target="v-pass-file">👁</button>
+      </div>
+      <div class="vstrength" id="vstr-file">strength: —</div>
+      <div class="vdrop" id="v-file-drop">
+        <span>📄 Drop file here or click to browse</span>
+        <input type="file" id="v-file-input" style="display:none"/>
+      </div>
+      <div class="vbtnrow">
+        <button class="vbtn vbtn-enc" id="v-file-enc">⟳ Encrypt File</button>
+        <button class="vbtn vbtn-dec" id="v-file-dec">⟳ Decrypt .vlt</button>
+      </div>
+      <div id="v-file-status" class="vinfo">—</div>
+    </div>
+
+    <!-- Hash utility -->
+    <div class="vtab-body" data-vtab="hash">
+      <label class="vlabel">Input text</label>
+      <textarea id="v-hash-in" class="vtextarea" placeholder="Text to hash…" rows="3"></textarea>
+      <label class="vlabel">Algorithm</label>
+      <select id="v-hash-algo" class="vselect">
+        <option value="SHA-256">SHA-256</option>
+        <option value="SHA-384">SHA-384</option>
+        <option value="SHA-512">SHA-512</option>
+        <option value="SHA-1">SHA-1 (legacy)</option>
+      </select>
+      <div class="vbtnrow">
+        <button class="vbtn vbtn-enc" id="v-hash-run">⊕ Hash</button>
+        <button class="vbtn" id="v-hash-copy">📋 Copy</button>
+      </div>
+      <label class="vlabel">Output</label>
+      <textarea id="v-hash-out" class="vtextarea" rows="2" readonly></textarea>
+    </div>
+
+    <!-- Passphrase generator -->
+    <div class="vtab-body" data-vtab="passgen">
+      <label class="vlabel">Length</label>
+      <input type="range" id="v-pg-len" min="8" max="64" value="24" class="vrange"/>
+      <span id="v-pg-len-lbl">24</span>
+      <label class="vlabel">Mode</label>
+      <select id="v-pg-mode" class="vselect">
+        <option value="chars">Random characters</option>
+        <option value="words">Word-based</option>
+        <option value="pin">Numeric PIN</option>
+      </select>
+      <div class="vbtnrow">
+        <button class="vbtn vbtn-enc" id="v-pg-gen">⊕ Generate</button>
+        <button class="vbtn" id="v-pg-copy">📋 Copy</button>
+      </div>
+      <textarea id="v-pg-out" class="vtextarea" rows="2" readonly placeholder="Generated passphrase…"></textarea>
+      <div class="vstrength" id="vstr-pg">strength: —</div>
+    </div>
+
+    <!-- Steganography tools -->
+    <div class="vtab-body" data-vtab="stego">
+      <label class="vlabel">Encode: secret message</label>
+      <textarea id="v-stego-secret" class="vtextarea" rows="2" placeholder="Secret payload…"></textarea>
+      <label class="vlabel">Cover text (visible)</label>
+      <textarea id="v-stego-cover" class="vtextarea" rows="2" placeholder="Visible text to hide payload in…"></textarea>
+      <div class="vbtnrow">
+        <button class="vbtn vbtn-enc" id="v-stego-enc">⟳ Encode</button>
+        <button class="vbtn vbtn-dec" id="v-stego-dec">⟳ Decode</button>
+      </div>
+      <label class="vlabel">Output</label>
+      <textarea id="v-stego-out" class="vtextarea" rows="3" readonly></textarea>
+      <div class="vinfo">Steganography uses 256 invisible Unicode codepoints (U+E0000 tag block + variation selectors + zero-width marks). Zero visible footprint.</div>
+    </div>
+
   </div>
-  <iframe id="iframe-frame" sandbox="allow-scripts allow-forms allow-same-origin allow-popups"></iframe>
 </div>
 
-<!-- Matrix canvas -->
-<canvas id="matrix-canvas" onclick="stopMatrix()"></canvas>
+<!-- iframe overlay for proxies/games -->
+<div id="iframe-overlay" hidden>
+  <div id="iframe-bar">
+    <span id="iframe-title">—</span>
+    <button id="iframe-close">✕ CLOSE</button>
+  </div>
+  <iframe id="iframe-frame" sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-modals"></iframe>
+</div>
 
-<script>
-// ═══════════════════════════════════════════════════════
-//  HACKSCRIPT ENGINE v3.0
-//  A JavaScript superset with 50+ built-in commands
-// ═══════════════════════════════════════════════════════
+<!-- Matrix rain canvas -->
+<canvas id="matrix-canvas"></canvas>
 
-const LINKS = [
-  { n:'RammerHead',        t:'Web Proxy',   cat:'proxy', d:'Full-featured web proxy.',  _:'https://efly.108-181-32-77.sslip.io/' },
-  { n:'PeteZah',           t:'Web Proxy',   cat:'proxy', d:'Alternative proxy node.',   _:'https://tubmlexeni.viar3d.com/' },
-  { n:'Interstellar',      t:'Web Proxy',   cat:'proxy', d:'Lightweight mini proxy.',   _:'https://92850.vercel.app/' },
-  { n:'Ultraviolet',       t:'Web Proxy',   cat:'proxy', d:'Popular open-source proxy.',_:'https://ultraviolet.cloud/' },
-  { n:'Holy Unblocker',    t:'Web Proxy',   cat:'proxy', d:'Full proxy suite.',         _:'https://holy-unblocker.vercel.app/' },
-  { n:'Titanium Network',  t:'Web Proxy',   cat:'proxy', d:'Proxy hub, multi-backend.', _:'https://titaniumnetwork.org/' },
-  { n:'CroxyProxy',        t:'Web Proxy',   cat:'proxy', d:'Free anonymous proxy.',     _:'https://croxy.network/' },
-  { n:'Hidester',          t:'Web Proxy',   cat:'proxy', d:'Online proxy + SSL.',       _:'https://hidester.com/proxy/' },
-  { n:'Proxyium',          t:'Web Proxy',   cat:'proxy', d:'Fast, no config proxy.',    _:'https://proxyium.com/' },
-  { n:'MacVG',             t:'Game Site',   cat:'game',  d:'Unblocked games collection.',      _:'https://kbsigmaboy67.github.io/macvg/' },
-  { n:'GN Math',           t:'Game Site',   cat:'game',  d:'Math-based unblocked games.',      _:'https://6juwn33a3c.107.174.34.44.sslip.io' },
-  { n:'UG Premium',        t:'Game Site',   cat:'game',  d:'Huge unblocked game library.',     _:'https://unblocked-gamespremium.com/' },
-  { n:'UG Premium GH',     t:'Game Site',   cat:'game',  d:'GitHub mirror.',                   _:'https://unblockedgamespremium.github.io/' },
-  { n:'Premium UG GL',     t:'Game Site',   cat:'game',  d:'GitLab mirror.',                   _:'https://premiumunblockedgames.gitlab.io/' },
-  { n:'Unblocked GG',      t:'Game Site',   cat:'game',  d:'Large game catalog.',              _:'https://unblockedgames.gg/' },
-  { n:'Unblocked Premium', t:'Game Site',   cat:'game',  d:'Curated premium games.',           _:'https://unblockedpremium.com/' },
-  { n:'Unblocked 76',      t:'Game Site',   cat:'game',  d:'Classic 76-style hub.',            _:'https://unblocked-76-games.org/' },
-  { n:'UG Now',            t:'Game Site',   cat:'game',  d:'Quick access games.',              _:'https://unblockedgames.now/' },
-  { n:'UG-G',              t:'Game Site',   cat:'game',  d:'Alternate game portal.',           _:'https://unblockedgamesg.org/' },
-  { n:'UG Premium Online', t:'Game Site',   cat:'game',  d:'GitHub-hosted mirror.',            _:'https://unblockedgamespremiumonline.github.io/' },
-  { n:'UG IM',             t:'Game Site',   cat:'game',  d:'Instant game launcher.',           _:'https://unblockedgames.im/' },
-  { n:'Unbanned Games',    t:'Game Site',   cat:'game',  d:'Games off blocklists.',            _:'https://unbannedgames.io/' },
-  { n:'1001 Unblocked',    t:'Game Site',   cat:'game',  d:'1000+ unblocked titles.',          _:'https://1001unblockedgames.github.io/' },
-  { n:'UG GG Com',         t:'Game Site',   cat:'game',  d:'.com variant of GG hub.',          _:'https://unblockedgamesgg.com/' },
-  { n:'Unbanned.games',    t:'Game Site',   cat:'game',  d:'Community game directory.',        _:'https://unbanned.games/' },
-  { n:'Now GG Unblocked',  t:'Game Site',   cat:'game',  d:'Cloud browser games.',            _:'https://now.gg/games/unblocked.html' },
-  { n:'Freeze Nova',       t:'Game Site',   cat:'game',  d:'GitLab game collection.',         _:'https://freezenovagames.gitlab.io/' },
-  { n:'Yapi Games',        t:'Game Site',   cat:'game',  d:'HTML5 browser games.',            _:'https://www.yapigames.com/' },
-  { n:'GameDistribution',  t:'Game Site',   cat:'game',  d:'1000+ titles publisher.',         _:'https://www.gamedistribution.com/' },
-  { n:'G Plus Games',      t:'Game Site',   cat:'game',  d:'Curated browser games.',          _:'https://gplusgames.com/' },
-];
+<!-- Scripts — order matters -->
+<script src="crypto.js"></script>
+<script src="links.js"></script>
+<script src="hackscript.js"></script>
+<script src="terminal.js"></script>
 
-// ─── State ───────────────────────────────────────────
-const ENV = {
-  vars: {},
-  fns: {},
-  cmdCount: 0,
-  lineCount: 0,
-  history: [],
-  histIdx: -1,
-  matrixRunning: false,
-  matrixRaf: null,
-  currentFilter: 'all',
-};
-
-// ─── DOM refs ────────────────────────────────────────
-const $term   = document.getElementById('terminal');
-const $input  = document.getElementById('cmd-input');
-const $notif  = document.getElementById('notif');
-const $ac     = document.getElementById('autocomplete');
-const $iframe = document.getElementById('iframe-overlay');
-const $ifrm   = document.getElementById('iframe-frame');
-const $iTitle = document.getElementById('iframe-title');
-const $matrix = document.getElementById('matrix-canvas');
-
-// ─── CodeMirror Editor ───────────────────────────────
-let editor;
-window.addEventListener('load', () => {
-  editor = CodeMirror(document.getElementById('editor-wrap'), {
-    mode: 'javascript',
-    theme: 'default',
-    lineNumbers: true,
-    autoCloseBrackets: true,
-    matchBrackets: true,
-    extraKeys: {
-      'Ctrl-Space': 'autocomplete',
-      'Ctrl-Enter': () => runEditor(),
-    },
-    value: `// HackScript v3.0 — Example Program
-// Press Ctrl+Enter or click ▶ RUN
-
-let msg = "Initializing HackScript...";
-print(msg);
-
-// Create a visual element
-html \`<div style="color:#00aaff;font-family:monospace;padding:10px;border:1px solid #00aaff;border-radius:4px;margin:4px 0;">
-  ⚡ Hello from HackScript!<br/>
-  <span style="color:#ff2244">Injected HTML rendering works.</span>
-</div>\`;
-
-// Use custom functions
-let nums = range(1, 10);
-print("Range 1-10:", nums);
-
-let squared = nums.map(x => x ** 2);
-print("Squared:", squared);
-
-// Stats
-let avg = mean(squared);
-print("Mean of squares:", avg);
-
-// Async example
-await sleep(200);
-print("✓ Complete.");
-`,
-    lineWrapping: false,
-    indentUnit: 2,
-    tabSize: 2,
-    smartIndent: true,
-    autofocus: false,
-  });
-});
-
-// ─── Clock ───────────────────────────────────────────
-setInterval(() => {
-  const now = new Date();
-  document.getElementById('clock').textContent =
-    [now.getHours(), now.getMinutes(), now.getSeconds()]
-      .map(n => String(n).padStart(2,'0')).join(':');
-}, 1000);
-
-// ─── Sidebar ─────────────────────────────────────────
-function buildSidebar(filter = 'all') {
-  const list = document.getElementById('sidebar-list');
-  list.innerHTML = '';
-  const items = filter === 'all' ? LINKS : LINKS.filter(l => l.cat === filter);
-  items.forEach(link => {
-    const el = document.createElement('div');
-    el.className = `sidebar-item si-${link.cat}`;
-    el.innerHTML = `
-      <span style="color:${link.cat==='proxy'?'var(--red)':'var(--blue)'}">
-        ${link.cat==='proxy'?'🔒':'🎮'}
-      </span>
-      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${link.n}</span>
-      <span class="si-tag">${link.cat.toUpperCase()}</span>`;
-    el.title = link.d;
-    el.onclick = () => openLink(link._);
-    list.appendChild(el);
-  });
-}
-function filterSidebar(cat) {
-  ENV.currentFilter = cat;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  event.target.classList.add('active');
-  buildSidebar(cat);
-}
-buildSidebar();
-
-// ─── Terminal output ─────────────────────────────────
-function write(text, cls = 't-out', raw = false) {
-  const line = document.createElement('div');
-  line.className = `t-line`;
-  if (raw) {
-    line.innerHTML = `<span class="${cls}">${text}</span>`;
-  } else {
-    line.innerHTML = `<span class="${cls}">${escHtml(String(text))}</span>`;
-  }
-  $term.appendChild(line);
-  $term.scrollTop = $term.scrollHeight;
-  ENV.lineCount++;
-  document.getElementById('stat-lines').textContent = ENV.lineCount;
-}
-
-function writeHtml(html) {
-  const line = document.createElement('div');
-  line.className = 't-line';
-  const span = document.createElement('span');
-  span.className = 't-html';
-  span.innerHTML = html;
-  line.appendChild(span);
-  $term.appendChild(line);
-  $term.scrollTop = $term.scrollHeight;
-}
-
-function writePrompt(text) {
-  const line = document.createElement('div');
-  line.className = 't-line';
-  line.innerHTML = `<span class="t-prompt">hackscript&gt;</span><span class="t-cmd" style="margin-left:8px;">${escHtml(text)}</span>`;
-  $term.appendChild(line);
-  $term.scrollTop = $term.scrollHeight;
-}
-
-function escHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
-function clearTerm() { $term.innerHTML = ''; }
-
-// ─── Notifications ───────────────────────────────────
-function notify(msg, type = '') {
-  const el = document.createElement('div');
-  el.className = `notif-item ${type}`;
-  el.textContent = msg;
-  $notif.appendChild(el);
-  setTimeout(() => el.remove(), 3100);
-}
-
-// ─── Stats updater ───────────────────────────────────
-function updateStats() {
-  document.getElementById('stat-cmds').textContent = ENV.cmdCount;
-  document.getElementById('stat-vars').textContent = Object.keys(ENV.vars).length;
-  document.getElementById('stat-fns').textContent  = Object.keys(ENV.fns).length;
-  updateVarsPanel();
-}
-
-function updateVarsPanel() {
-  const panel = document.getElementById('vars-panel');
-  panel.innerHTML = '';
-  const entries = Object.entries(ENV.vars).slice(0, 40);
-  entries.forEach(([k, v]) => {
-    const t = Array.isArray(v) ? 'array' : typeof v;
-    const row = document.createElement('div');
-    row.className = 'var-row';
-    row.innerHTML = `
-      <span class="var-name">${escHtml(k)}</span>
-      <span class="var-val">${escHtml(String(v).slice(0,30))}</span>
-      <span class="var-type">${t}</span>`;
-    panel.appendChild(row);
-  });
-}
-
-// ─── History ─────────────────────────────────────────
-function addHistory(cmd) {
-  ENV.history.unshift(cmd);
-  if (ENV.history.length > 50) ENV.history.pop();
-  ENV.histIdx = -1;
-  const list = document.getElementById('history-list');
-  list.innerHTML = '';
-  ENV.history.slice(0, 20).forEach(h => {
-    const el = document.createElement('div');
-    el.className = 'hist-item';
-    el.textContent = h;
-    el.onclick = () => { $input.value = h; $input.focus(); };
-    list.appendChild(el);
-  });
-}
-
-// ─── iframe ──────────────────────────────────────────
-function openLink(url) {
-  $iTitle.textContent = url;
-  $ifrm.src = url;
-  $iframe.classList.add('visible');
-}
-function closeIframe() {
-  $iframe.classList.remove('visible');
-  $ifrm.src = 'about:blank';
-}
-
-// ─── Tab switcher ────────────────────────────────────
-let activeTab = 'terminal';
-function switchTab(t) {
-  activeTab = t;
-  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
-  document.querySelector(`[data-tab="${t}"]`)?.classList.add('active');
-}
-document.querySelectorAll('.tab').forEach(tab => {
-  tab.addEventListener('click', () => switchTab(tab.dataset.tab));
-});
-
-// ─── Editor functions ─────────────────────────────────
-function runEditor() {
-  const code = editor ? editor.getValue() : '';
-  if (code.trim()) {
-    write('▶ Running editor script...', 't-sys');
-    executeHackScript(code);
-  }
-}
-function clearEditor() { editor?.setValue(''); }
-function saveEditor() {
-  const code = editor?.getValue() || '';
-  const blob = new Blob([code], {type:'text/plain'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = document.getElementById('editor-filename').textContent;
-  a.click();
-  notify('Script saved!', 'ok');
-}
-
-// ═══════════════════════════════════════════════════════
-//  HACKSCRIPT RUNTIME
-// ═══════════════════════════════════════════════════════
-
-// Built-in stdlib exposed to scripts
-const HS_STDLIB = {
-  // ── Output ──────────────────────────────────────────
-  print:   (...args) => write(args.map(a => typeof a === 'object' ? JSON.stringify(a,null,2) : a).join(' '), 't-out'),
-  println: (...args) => write(args.join('\n'), 't-out'),
-  info:    (...args) => write('ℹ ' + args.join(' '), 't-info'),
-  warn:    (...args) => write('⚠ ' + args.join(' '), 't-warn'),
-  error:   (...args) => write('✖ ' + args.join(' '), 't-err'),
-  success: (...args) => write('✔ ' + args.join(' '), 't-ok'),
-  sys:     (...args) => write('⚙ ' + args.join(' '), 't-sys'),
-  dim:     (...args) => write(args.join(' '), 't-dim'),
-  banner:  (t) => write(`<span style="color:var(--red);text-shadow:0 0 10px var(--red-glow);font-size:14px;font-family:var(--font-hud);letter-spacing:4px;">${escHtml(t)}</span>`, 't-banner', true),
-  table:   (arr) => {
-    if (!Array.isArray(arr) || !arr.length) { write('(empty)', 't-dim'); return; }
-    const keys = Object.keys(arr[0]);
-    let out = `<table style="border-collapse:collapse;font-size:11px;font-family:var(--font-mono);width:100%;">`;
-    out += `<tr>${keys.map(k=>`<th style="color:var(--blue);border-bottom:1px solid var(--border);padding:2px 10px;text-align:left;">${escHtml(k)}</th>`).join('')}</tr>`;
-    arr.forEach(row => {
-      out += `<tr>${keys.map(k=>`<td style="padding:2px 10px;color:var(--text);border-bottom:1px solid #111;">${escHtml(String(row[k]??''))}</td>`).join('')}</tr>`;
-    });
-    out += '</table>';
-    writeHtml(out);
-  },
-  chart:   (data, label='') => {
-    const max = Math.max(...data);
-    let html = `<div style="font-size:11px;margin:4px 0;">`;
-    if (label) html += `<div style="color:var(--blue);margin-bottom:2px;">${escHtml(label)}</div>`;
-    data.forEach((v,i) => {
-      const pct = Math.round((v/max)*100);
-      html += `<div style="display:flex;align-items:center;gap:6px;margin:1px 0;">
-        <span style="color:var(--text-dim);width:20px;text-align:right;">${i}</span>
-        <div style="flex:1;background:var(--bg3);border-radius:2px;height:10px;">
-          <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,var(--red),var(--blue));border-radius:2px;"></div>
-        </div>
-        <span style="color:var(--green);width:40px;">${v}</span>
-      </div>`;
-    });
-    html += '</div>';
-    writeHtml(html);
-  },
-  progress: (pct, label='') => {
-    writeHtml(`<div style="font-size:11px;margin:2px 0;">
-      ${label ? `<span style="color:var(--text-dim);">${escHtml(label)}</span> ` : ''}
-      <div class="progress-bar"><div class="progress-fill" style="width:${Math.min(100,pct)}%;"></div></div>
-    </div>`);
-  },
-  html: (str) => writeHtml(str),
-  css: (str) => {
-    const tag = document.createElement('style');
-    tag.textContent = str;
-    document.head.appendChild(tag);
-    write('✔ CSS injected.', 't-ok');
-  },
-  render: (str) => {
-    const win = window.open('','_blank','width=800,height=600');
-    win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{background:#050508;color:#c8d0e0;font-family:'Share Tech Mono',monospace;padding:20px;}</style></head><body>${str}</body></html>`);
-    win.document.close();
-    write('✔ Rendered in new window.', 't-ok');
-  },
-
-  // ── Utilities ───────────────────────────────────────
-  clear:   ()         => clearTerm(),
-  sleep:   (ms)       => new Promise(r => setTimeout(r, ms)),
-  rand:    (a=0,b=1)  => Math.random()*(b-a)+a,
-  randInt: (a=0,b=10) => Math.floor(Math.random()*(b-a+1))+a,
-  range:   (a,b,s=1)  => { const r=[]; for(let i=a;i<b;i+=s)r.push(i); return r; },
-  clamp:   (v,mn,mx)  => Math.min(mx,Math.max(mn,v)),
-  lerp:    (a,b,t)    => a+(b-a)*t,
-  shuffle: (arr)      => [...arr].sort(()=>Math.random()-0.5),
-  unique:  (arr)      => [...new Set(arr)],
-  flatten: (arr,d=1)  => arr.flat(d),
-  chunk:   (arr,n)    => { const r=[]; for(let i=0;i<arr.length;i+=n)r.push(arr.slice(i,i+n)); return r; },
-  zip:     (...arrs)  => arrs[0].map((_,i) => arrs.map(a=>a[i])),
-  sum:     (arr)      => arr.reduce((a,b)=>a+b,0),
-  mean:    (arr)      => arr.reduce((a,b)=>a+b,0)/arr.length,
-  median:  (arr)      => { const s=[...arr].sort((a,b)=>a-b); return s[Math.floor(s.length/2)]; },
-  max:     (arr)      => Math.max(...arr),
-  min:     (arr)      => Math.min(...arr),
-  std:     (arr)      => { const m=HS_STDLIB.mean(arr); return Math.sqrt(arr.reduce((a,b)=>a+(b-m)**2,0)/arr.length); },
-  abs:     (n)        => Math.abs(n),
-  floor:   (n)        => Math.floor(n),
-  ceil:    (n)        => Math.ceil(n),
-  round:   (n,d=0)    => Number(n.toFixed(d)),
-  sqrt:    (n)        => Math.sqrt(n),
-  pow:     (b,e)      => Math.pow(b,e),
-  log:     (n,base=Math.E) => Math.log(n)/Math.log(base),
-  sin:     (n)        => Math.sin(n),
-  cos:     (n)        => Math.cos(n),
-  tan:     (n)        => Math.tan(n),
-  PI:      Math.PI,
-  E:       Math.E,
-
-  // ── String ──────────────────────────────────────────
-  upper:   (s)        => String(s).toUpperCase(),
-  lower:   (s)        => String(s).toLowerCase(),
-  trim:    (s)        => String(s).trim(),
-  split:   (s,d)      => String(s).split(d),
-  join:    (a,d='')   => a.join(d),
-  repeat:  (s,n)      => String(s).repeat(n),
-  pad:     (s,n,c=' ')=> String(s).padStart(n,c),
-  replace: (s,a,b)    => String(s).replace(new RegExp(a,'g'),b),
-  includes:(s,q)      => String(s).includes(q),
-  startsWith:(s,q)    => String(s).startsWith(q),
-  endsWith:(s,q)      => String(s).endsWith(q),
-  encode:  (s)        => btoa(s),
-  decode:  (s)        => atob(s),
-  hash:    async (s)  => {
-    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
-    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-  },
-  uuid:    ()         => crypto.randomUUID(),
-
-  // ── Date/Time ───────────────────────────────────────
-  now:     ()         => new Date().toLocaleString(),
-  timestamp: ()       => Date.now(),
-  date:    ()         => new Date().toLocaleDateString(),
-  time:    ()         => new Date().toLocaleTimeString(),
-  timer:   async (fn,ms) => { await HS_STDLIB.sleep(ms); return fn(); },
-
-  // ── JSON / Data ─────────────────────────────────────
-  json:    (v)        => JSON.stringify(v, null, 2),
-  parse:   (s)        => JSON.parse(s),
-  keys:    (o)        => Object.keys(o),
-  values:  (o)        => Object.values(o),
-  entries: (o)        => Object.entries(o),
-  merge:   (...objs)  => Object.assign({}, ...objs),
-  pick:    (o,...ks)  => Object.fromEntries(ks.map(k=>[k,o[k]])),
-  omit:    (o,...ks)  => Object.fromEntries(Object.entries(o).filter(([k])=>!ks.includes(k))),
-  deepClone:(o)       => JSON.parse(JSON.stringify(o)),
-
-  // ── System ──────────────────────────────────────────
-  vars:    ()         => { write(JSON.stringify(ENV.vars,null,2), 't-info'); },
-  fns:     ()         => { write(JSON.stringify(Object.keys(ENV.fns)), 't-info'); },
-  history: ()         => { ENV.history.forEach((h,i) => write(`${i}: ${h}`, 't-dim')); },
-  help:    (topic)    => showHelp(topic),
-  version: ()         => write('HackScript v3.0 — HackTerminal Engine', 't-sys'),
-  clear:   ()         => clearTerm(),
-  links:   ()         => {
-    LINKS.forEach(l => {
-      writeHtml(`<div style="display:flex;gap:8px;align-items:center;font-size:12px;padding:1px 0;">
-        <span style="color:${l.cat==='proxy'?'var(--red)':'var(--blue)'};width:12px;">${l.cat==='proxy'?'🔒':'🎮'}</span>
-        <span style="color:var(--cyan);min-width:160px;">${escHtml(l.n)}</span>
-        <span style="color:var(--text-dim);font-size:10px;">${escHtml(l.d)}</span>
-        <span style="color:var(--text-dim);font-size:9px;margin-left:auto;">${l.t}</span>
-      </div>`);
-    });
-  },
-  open:    (q)        => {
-    const match = LINKS.find(l => l.n.toLowerCase().includes(q.toLowerCase()) || l._.toLowerCase().includes(q.toLowerCase()));
-    if (match) { openLink(match._); write(`✔ Opening ${match.n}`, 't-ok'); }
-    else { write(`No link found for "${q}"`, 't-err'); }
-  },
-  openUrl: (url)      => openLink(url),
-  proxies: ()         => { LINKS.filter(l=>l.cat==='proxy').forEach(l=>write(`${l.n} → ${l._}`, 't-info')); },
-  games:   ()         => { LINKS.filter(l=>l.cat==='game').forEach(l=>write(`${l.n} → ${l._}`, 't-info')); },
-  notify:  (msg,t)    => notify(msg, t),
-  matrix:  ()         => startMatrix(),
-  stopMatrix: ()      => stopMatrix(),
-  theme:   (name)     => applyTheme(name),
-  fetch:   async (url, opts) => {
-    try {
-      const r = await fetch(url, opts);
-      const txt = await r.text();
-      return txt;
-    } catch(e) { write('✖ Fetch failed: ' + e.message, 't-err'); return null; }
-  },
-  assert:  (cond,msg='Assertion failed') => { if(!cond) throw new Error(msg); write(`✔ Assert passed`, 't-ok'); },
-  type:    (v)        => { write(Array.isArray(v)?'array':typeof v, 't-info'); },
-  inspect: (v)        => { write(JSON.stringify(v,null,2), 't-info'); },
-  sizeof:  (v)        => {
-    const s = JSON.stringify(v);
-    const b = new Blob([s]).size;
-    write(`${b} bytes`, 't-info');
-  },
-  demo:    ()         => runDemo(),
-  about:   ()         => showAbout(),
-  count:   (arr,pred) => pred ? arr.filter(pred).length : arr.length,
-  filter:  (arr,fn)   => arr.filter(fn),
-  map:     (arr,fn)   => arr.map(fn),
-  reduce:  (arr,fn,i) => arr.reduce(fn,i),
-  sort:    (arr,fn)   => [...arr].sort(fn),
-  reverse: (arr)      => [...arr].reverse(),
-  first:   (arr,n=1)  => n===1?arr[0]:arr.slice(0,n),
-  last:    (arr,n=1)  => n===1?arr[arr.length-1]:arr.slice(-n),
-  sample:  (arr,n=1)  => HS_STDLIB.shuffle(arr).slice(0,n),
-  pipe:    (...fns)   => (v) => fns.reduce((a,f)=>f(a),v),
-  compose: (...fns)   => (v) => fns.reduceRight((a,f)=>f(a),v),
-  memoize: (fn)       => { const c={}; return (...a)=>{ const k=JSON.stringify(a); return k in c?c[k]:c[k]=fn(...a); }; },
-  curry:   (fn)       => function cur(...a){ return a.length>=fn.length?fn(...a):(...b)=>cur(...a,...b); },
-  debounce:(fn,ms)    => { let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms); }; },
-  once:    (fn)       => { let r,c=false; return (...a)=>{ if(!c){c=true;r=fn(...a);} return r; }; },
-};
-
-// ─── Preprocess HackScript → JS ──────────────────────
-function preprocessHackScript(code) {
-  // Tagged template literal: html`...` becomes HS_STDLIB.html(`...`)
-  code = code.replace(/\bhtml\s*`/g, 'HS_STDLIB.html(`');
-  // css`...`
-  code = code.replace(/\bcss\s*`/g, 'HS_STDLIB.css(`');
-  // log shorthand
-  code = code.replace(/\blog\b(?=\s*\()/g, 'HS_STDLIB.print');
-  // $ shorthand for print
-  code = code.replace(/^\$\s+/gm, 'HS_STDLIB.print(') ;
-  return code;
-}
-
-// ─── Execute HackScript ──────────────────────────────
-async function executeHackScript(code) {
-  ENV.cmdCount++;
-  updateStats();
-  try {
-    code = preprocessHackScript(code);
-    // Build function with full stdlib + ENV vars in scope
-    const varDecls = Object.entries(ENV.vars)
-      .map(([k,v]) => `let ${k} = __env__.vars['${k}'];`)
-      .join('\n');
-
-    const fnDecls = Object.entries(ENV.fns)
-      .map(([k,v]) => `const ${k} = __env__.fns['${k}'];`)
-      .join('\n');
-
-    const wrapped = `(async function(__env__, HS_STDLIB) {
-      // Destructure stdlib
-      const {${Object.keys(HS_STDLIB).join(',')}} = HS_STDLIB;
-      // Inject user vars
-      ${varDecls}
-      ${fnDecls}
-      // User code
-      ${code}
-      // Capture new/updated vars (best-effort via with trick isn't reliable — use ENV directly)
-    })(__ENV__, HS_STDLIB)`;
-
-    const result = await eval(wrapped);
-    if (result !== undefined) {
-      write(typeof result === 'object' ? JSON.stringify(result, null, 2) : String(result), 't-ok');
-    }
-  } catch(e) {
-    write(`✖ ${e.name}: ${e.message}`, 't-err');
-  }
-  updateStats();
-}
-
-// ─── Help system ─────────────────────────────────────
-function showHelp(topic) {
-  const categories = {
-    output:  ['print','println','info','warn','error','success','sys','dim','banner','table','chart','progress','html','css','render'],
-    math:    ['rand','randInt','range','clamp','lerp','sum','mean','median','max','min','std','abs','floor','ceil','round','sqrt','pow','log','sin','cos','tan','PI','E'],
-    string:  ['upper','lower','trim','split','join','repeat','pad','replace','includes','startsWith','endsWith','encode','decode','hash','uuid'],
-    array:   ['shuffle','unique','flatten','chunk','zip','count','filter','map','reduce','sort','reverse','first','last','sample'],
-    functional: ['pipe','compose','memoize','curry','debounce','once'],
-    data:    ['json','parse','keys','values','entries','merge','pick','omit','deepClone','type','inspect','sizeof'],
-    system:  ['clear','sleep','now','timestamp','date','time','timer','vars','fns','history','help','version'],
-    net:     ['fetch','open','openUrl','proxies','games','links'],
-    fx:      ['matrix','stopMatrix','theme','notify','demo','about'],
-  };
-  if (!topic) {
-    write('─── HackScript v3.0 Help ───────────────────', 't-sys');
-    write('Categories: ' + Object.keys(categories).join(', '), 't-info');
-    write('Usage: help("category")  or  help("command")', 't-dim');
-    write('', 't-dim');
-    write('Type any JS or HackScript — it runs directly.', 't-dim');
-    write('Multiline: use the editor panel below.', 't-dim');
-    return;
-  }
-  if (categories[topic]) {
-    write(`─── ${topic.toUpperCase()} ─────────────────────────`, 't-sys');
-    categories[topic].forEach(cmd => write(`  ${cmd}()`, 't-info'));
-  } else {
-    // Search for specific command
-    write(`Searching for "${topic}"...`, 't-dim');
-    const all = Object.values(categories).flat();
-    const found = all.filter(c => c.toLowerCase().includes(topic.toLowerCase()));
-    if (found.length) found.forEach(c => write(`  ${c}()`, 't-info'));
-    else write('Not found. Try help() for categories.', 't-warn');
-  }
-}
-
-function showAbout() {
-  write('', 't-dim');
-  write('▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓', 't-sys');
-  write('  HACKTERMINAL v3.0', 't-sys');
-  write('  HackScript Engine — JS 2.0 Superset', 't-info');
-  write('  50+ built-in functions', 't-info');
-  write('  CodeMirror 5 editor w/ live highlighting', 't-info');
-  write('  Proxy & game navigator built in', 't-info');
-  write('  Full async/await support', 't-info');
-  write('▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓', 't-sys');
-  write('', 't-dim');
-}
-
-async function runDemo() {
-  write('─── Demo Mode ──────────────────────────', 't-sys');
-  await HS_STDLIB.sleep(100);
-  HS_STDLIB.banner('HACKSCRIPT ENGINE');
-  await HS_STDLIB.sleep(200);
-  HS_STDLIB.info('Running demo sequence...');
-  HS_STDLIB.progress(75, 'Loading modules');
-  await HS_STDLIB.sleep(300);
-  const nums = HS_STDLIB.range(1, 8);
-  HS_STDLIB.chart(nums.map(n => HS_STDLIB.randInt(10, 100)), 'Random Data');
-  await HS_STDLIB.sleep(200);
-  HS_STDLIB.table([
-    {Name:'Alpha',Value:42,Status:'OK'},
-    {Name:'Beta', Value:17,Status:'WARN'},
-    {Name:'Gamma',Value:99,Status:'OK'},
-  ]);
-  await HS_STDLIB.sleep(200);
-  HS_STDLIB.html(`<div style="padding:8px;border:1px solid var(--blue);border-radius:4px;font-size:12px;margin:4px 0;">
-    <span style="color:var(--blue);">⚡ HTML injection demo</span> — 
-    <span style="color:var(--green);">CSS variables work!</span>
-  </div>`);
-  await HS_STDLIB.sleep(200);
-  HS_STDLIB.success('Demo complete!');
-}
-
-// ─── Matrix effect ───────────────────────────────────
-function startMatrix() {
-  $matrix.style.display = 'block';
-  $matrix.width  = window.innerWidth;
-  $matrix.height = window.innerHeight;
-  const ctx = $matrix.getContext('2d');
-  const cols = Math.floor($matrix.width / 14);
-  const drops = Array(cols).fill(0);
-  ENV.matrixRunning = true;
-
-  function frame() {
-    if (!ENV.matrixRunning) return;
-    ctx.fillStyle = 'rgba(0,0,0,0.05)';
-    ctx.fillRect(0, 0, $matrix.width, $matrix.height);
-    ctx.font = '13px Share Tech Mono';
-    drops.forEach((y, i) => {
-      const ch = String.fromCharCode(0x30A0 + Math.random() * 96);
-      const r = Math.random();
-      ctx.fillStyle = r > 0.98 ? '#ffffff' : r > 0.8 ? '#00aaff' : '#ff2244';
-      ctx.fillText(ch, i * 14, y * 14);
-      if (y * 14 > $matrix.height && Math.random() > 0.975) drops[i] = 0;
-      else drops[i]++;
-    });
-    ENV.matrixRaf = requestAnimationFrame(frame);
-  }
-  frame();
-  write('Matrix started — click canvas to stop.', 't-info');
-}
-
-function stopMatrix() {
-  ENV.matrixRunning = false;
-  cancelAnimationFrame(ENV.matrixRaf);
-  $matrix.style.display = 'none';
-  write('Matrix stopped.', 't-dim');
-}
-
-// ─── Themes ──────────────────────────────────────────
-function applyTheme(name) {
-  const themes = {
-    red:    { '--red':'#ff2244', '--blue':'#cc1133', '--cyan':'#ff6688' },
-    blue:   { '--red':'#0088ff', '--blue':'#00aaff', '--cyan':'#00ccff' },
-    green:  { '--red':'#00ff88', '--blue':'#00cc66', '--cyan':'#00ffaa' },
-    purple: { '--red':'#cc44ff', '--blue':'#8800ff', '--cyan':'#dd88ff' },
-    hacker: { '--red':'#00ff00', '--blue':'#00cc00', '--cyan':'#88ff00' },
-    cyber:  { '--red':'#ff2244', '--blue':'#00aaff', '--cyan':'#00ffee' },
-  };
-  if (!themes[name]) { write(`Themes: ${Object.keys(themes).join(', ')}`, 't-info'); return; }
-  const root = document.documentElement;
-  Object.entries(themes[name]).forEach(([k,v]) => root.style.setProperty(k,v));
-  write(`✔ Theme "${name}" applied.`, 't-ok');
-  notify(`Theme: ${name}`, 'ok');
-}
-
-// ─── Autocomplete ────────────────────────────────────
-const ALL_COMPLETIONS = [
-  ...Object.keys(HS_STDLIB).map(k => ({label:k, type: typeof HS_STDLIB[k] === 'function' ? 'fn' : 'kw'})),
-  ...['let','const','var','async','await','for','while','if','else','return','function','class','import','export','try','catch','throw','new','typeof','instanceof','in','of'].map(k => ({label:k, type:'kw'})),
-  ...LINKS.map(l => ({label:`open("${l.n}")`, type:'cmd'})),
-];
-
-function updateAutocomplete(val) {
-  const word = val.split(/\s+/).pop().replace(/[^a-zA-Z0-9_"]/g,'');
-  if (!word || word.length < 2) { $ac.style.display='none'; return; }
-  const matches = ALL_COMPLETIONS.filter(c => c.label.startsWith(word)).slice(0, 12);
-  if (!matches.length) { $ac.style.display='none'; return; }
-
-  $ac.innerHTML = '';
-  matches.forEach((m, i) => {
-    const el = document.createElement('div');
-    el.className = 'ac-item' + (i===0?' selected':'');
-    el.innerHTML = `<span>${escHtml(m.label)}</span><span class="ac-type ${m.type}">${m.type}</span>`;
-    el.onmousedown = (e) => { e.preventDefault(); applyCompletion(m.label, word); };
-    $ac.appendChild(el);
-  });
-
-  const rect = $input.getBoundingClientRect();
-  $ac.style.left  = rect.left + 'px';
-  $ac.style.bottom = (window.innerHeight - rect.top + 2) + 'px';
-  $ac.style.display = 'block';
-}
-
-function applyCompletion(label, word) {
-  const cur = $input.value;
-  const lastIdx = cur.lastIndexOf(word);
-  $input.value = cur.slice(0, lastIdx) + label;
-  $ac.style.display = 'none';
-  $input.focus();
-}
-
-// ─── Startup banner ──────────────────────────────────
-function printBanner() {
-  writeHtml(`<pre class="t-banner">
- ██╗  ██╗ █████╗  ██████╗██╗  ██╗
- ██║  ██║██╔══██╗██╔════╝██║ ██╔╝
- ███████║███████║██║     █████╔╝ 
- ██╔══██║██╔══██║██║     ██╔═██╗ 
- ██║  ██║██║  ██║╚██████╗██║  ██╗
- ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝
- <span>TERMINAL v3.0  ——  HACKSCRIPT ENGINE</span></pre>`);
-  write('System initialized. Type help() for commands.', 't-dim');
-  write(`${LINKS.filter(l=>l.cat==='proxy').length} proxies and ${LINKS.filter(l=>l.cat==='game').length} game sites loaded.`, 't-info');
-  write('Ctrl+Enter in editor to run script. Tab for autocomplete.', 't-dim');
-  write('──────────────────────────────────────────────────────', 't-dim');
-}
-printBanner();
-
-// ─── Input handling ──────────────────────────────────
-$input.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
-    const val = $input.value.trim();
-    if (!val) return;
-    $ac.style.display = 'none';
-    writePrompt(val);
-    addHistory(val);
-    $input.value = '';
-    executeHackScript(val);
-
-  } else if (e.key === 'ArrowUp') {
-    e.preventDefault();
-    if (ENV.histIdx < ENV.history.length - 1) {
-      ENV.histIdx++;
-      $input.value = ENV.history[ENV.histIdx];
-    }
-  } else if (e.key === 'ArrowDown') {
-    e.preventDefault();
-    if (ENV.histIdx > 0) { ENV.histIdx--; $input.value = ENV.history[ENV.histIdx]; }
-    else { ENV.histIdx = -1; $input.value = ''; }
-  } else if (e.key === 'Tab') {
-    e.preventDefault();
-    const items = $ac.querySelectorAll('.ac-item');
-    if (items.length) {
-      const sel = $ac.querySelector('.ac-item.selected');
-      const label = sel ? sel.querySelector('span').textContent : items[0].querySelector('span').textContent;
-      const word = $input.value.split(/\s+/).pop().replace(/[^a-zA-Z0-9_"]/g,'');
-      applyCompletion(label, word);
-    }
-  } else if (e.key === 'Escape') {
-    $ac.style.display = 'none';
-  }
-});
-
-$input.addEventListener('input', () => updateAutocomplete($input.value));
-document.addEventListener('click', (e) => { if (!$ac.contains(e.target)) $ac.style.display='none'; });
-$input.focus();
-
-// Auto-focus on keypress anywhere
-document.addEventListener('keydown', (e) => {
-  if (e.target !== $input && !e.ctrlKey && !e.metaKey && e.key.length === 1) {
-    $input.focus();
-  }
-});
-</script>
 </body>
 </html>
